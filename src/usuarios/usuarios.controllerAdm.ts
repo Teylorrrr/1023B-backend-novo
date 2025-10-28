@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import { db } from '../database/banco-mongo.js'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-class UsuariosController {
+class UsuariosControllerAdm {
     async adicionar(req: Request, res: Response) {
         const { nome, idade, email, senha } = req.body
         if (!nome || !idade || !email || !senha)
@@ -43,4 +43,4 @@ class UsuariosController {
     }
 }
 
-export default new UsuariosController()
+export default new UsuariosControllerAdm()

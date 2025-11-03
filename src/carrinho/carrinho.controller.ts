@@ -132,16 +132,30 @@ class CarrinhoController {
         return res.status(200).json(carrinho);
     }
     //listar
-    async listar(req:Request, res:Response) {
-        const { usuarioId } = req.params;
-        if (!usuarioId || typeof usuarioId !== 'string') {
-            return res.status(400).json({ mensagem: "usuarioId é obrigatório e deve ser uma string" });
+    async listar(req: AutenticacaoRequest, res: Response) {
+        try {
+            if (!req.usuarioId) {
+                return res.status(401).json({ mensagem: "Usuário não autenticado" });
+            }
+
+            const usuarioId = req.usuarioId;
+            const carrinho = await db.collection<Carrinho>("carrinhos").findOne({ usuarioId });
+            
+            if (!carrinho) {
+                return res.status(200).json({ itens: [], total: 0, usuarioId });
+            }
+
+            res.status(200).json({
+                ...carrinho,
+                // Garante que o ID seja retornado como string
+                _id: carrinho._id.toString(),
+                // Garante que o usuarioId seja retornado corretamente
+                usuarioId: carrinho.usuarioId.toString()
+            });
+        } catch (error) {
+            console.error('Erro ao listar carrinho:', error);
+            res.status(500).json({ mensagem: 'Erro interno ao listar carrinho' });
         }
-        const carrinho = await db.collection<Carrinho>("carrinhos").findOne({ usuarioId: usuarioId});
-        if (!carrinho) {
-            return res.status(404).json({ mensagem: "Carrinho não encontrado" });
-        }
-        return res.status(200).json(carrinho);
     }
     //remover                -> Remover o carrinho todo
     async remover(req:Request, res:Response) {

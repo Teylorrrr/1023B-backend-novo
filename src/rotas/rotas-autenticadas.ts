@@ -18,6 +18,11 @@ rotas.post('/removerItem',carrinhoController.removerItem)
 rotas.get('/carrinho/:usuarioId',carrinhoController.listar)
 rotas.delete('/carrinho/:usuarioId',carrinhoController.remover)
 
+// Rotas de Usuários (Admin)
+rotas.get('/usuarios', usuariosControllerAdm.listar)
+rotas.put('/usuarios/:id', usuariosControllerAdm.atualizar)
+rotas.delete('/usuarios/:id', usuariosControllerAdm.remover)
+
 // Rotas de administração de usuários
 rotas.get('/usuarios',usuariosControllerAdm.listar)
 rotas.post('/adicionarUsuarioAdm',usuariosControllerAdm.adicionar)

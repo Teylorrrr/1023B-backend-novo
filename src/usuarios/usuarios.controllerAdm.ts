@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { db } from '../database/banco-mongo.js'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import { ObjectId } from 'mongodb'
 
 interface Usuario {
     _id: any;
@@ -51,6 +52,80 @@ class UsuariosControllerAdm {
         const usuarios = await db.collection('usuarios').find().toArray()
         const usuariosSemSenha = usuarios.map(({ senha, ...resto }) => resto)
         res.status(200).json(usuariosSemSenha)
+    }
+
+    async atualizar(req: Request, res: Response) {
+        const { id } = req.params;
+        const { nome, email, idade } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ error: "ID do usuário é obrigatório" });
+        }
+
+        try {
+            const atualizacao: any = {};
+            if (nome) atualizacao.nome = nome;
+            if (email) atualizacao.email = email;
+            if (idade !== undefined) atualizacao.idade = idade;
+
+            if (Object.keys(atualizacao).length === 0) {
+                return res.status(400).json({ error: "Nenhum dado para atualizar" });
+            }
+
+            const resultado = await db.collection('usuarios').updateOne(
+                { _id: new ObjectId(id) },
+                { $set: atualizacao }
+            );
+
+            if (resultado.matchedCount === 0) {
+                return res.status(404).json({ error: "Usuário não encontrado" });
+            }
+
+            res.status(200).json({ mensagem: "Usuário atualizado com sucesso" });
+        } catch (error: any) {
+            console.error("Erro ao atualizar usuário:", error);
+            res.status(500).json({ 
+                error: "Erro ao atualizar usuário",
+                detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    }
+
+    async remover(req: Request, res: Response) {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({ error: "ID do usuário é obrigatório" });
+        }
+
+        try {
+            // Verificar se o usuário existe
+            const usuario = await db.collection('usuarios').findOne({ _id: new ObjectId(id) });
+            
+            if (!usuario) {
+                return res.status(404).json({ error: "Usuário não encontrado" });
+            }
+
+            // Não permitir que um administrador se remova
+            if (usuario.isAdmin) {
+                return res.status(403).json({ error: "Não é permitido remover um administrador" });
+            }
+
+            // Remover o usuário
+            const resultado = await db.collection('usuarios').deleteOne({ _id: new ObjectId(id) });
+
+            if (resultado.deletedCount === 0) {
+                return res.status(404).json({ error: "Usuário não encontrado" });
+            }
+
+            res.status(200).json({ mensagem: "Usuário removido com sucesso" });
+        } catch (error: any) {
+            console.error("Erro ao remover usuário:", error);
+            res.status(500).json({ 
+                error: "Erro ao remover usuário",
+                detalhes: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
     }
 
     async login(req: Request, res: Response) {
